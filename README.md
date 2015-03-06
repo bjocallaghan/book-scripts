@@ -1,5 +1,6 @@
 # book-scripts
-A collection of files and scripts that are companions to some of the books I've read.
+A collection of files and scripts that are companions to some of the books I've
+read.
 
 Also, references to some cool stuff I've found.
 
@@ -10,6 +11,7 @@ Also, references to some cool stuff I've found.
 - [Norvig's Lispy (Beautiful)](http://norvig.com/lispy.html)
 - [Condition Handling in Common Lisp](http://www.nhplace.com/kent/Papers/Condition-Handling-2001.html)
 - [A Brief Guide to CLOS](http://www.aiai.ed.ac.uk/~jeff/clos-guide.html)
+- [GTK+ 3 Tutorial for Lisp](http://www.crategus.com/books/cl-gtk/gtk-tutorial.html)
 
 ## Online Books
 - [Practical Common Lisp](http://www.gigamonkeys.com/book/)
