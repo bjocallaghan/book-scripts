@@ -17,6 +17,7 @@ Also, references to some cool stuff I've found.
 - [Practical Common Lisp](http://www.gigamonkeys.com/book/)
 - [Successful Lisp](http://psg.com/~dlamkins/sl/)
 - [Let Over Lambda (partial)](http://letoverlambda.com/index.cl/toc)
+- [On Lisp (pdf)](http://ep.yimg.com/ty/cdn/paulgraham/onlisp.pdf)
 
 ### In Code: A Mathematical Journey
 #### Sarah and David Flannery
