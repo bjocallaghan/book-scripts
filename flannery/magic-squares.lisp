@@ -65,42 +65,38 @@
               (aref array row-index (- num-rows row-index 1))))
       (list diag-1 diag-2))))
 
-;;; helper function -- can factor out later
-
-(defun subdivide (list n)
-  "Returns a list of lists which are subdivisions of LIST of size N."
-  (let (lists)
-    (loop while list
-       do (progn (push (subseq list 0 n) lists) (dotimes (i n) (pop list))))
-    (nreverse lists)))
-
-(rt:deftest subdivision
-    (equal (subdivide '(1 2 3 4) 2) '((1 2) (3 4))) t)
-
 ;;; matrix operation stuff -- can factor out later
 
-(defun matrix-id (matrix)
-  (
+(defun rotate-square (square)
+  "Returns a clockwise-rotated square based on a 2d array SQUARE."
+  (let ((new-rows (mapcar #'(lambda (col) (nreverse col)) (columns square))))
+    (make-array (list (array-dimension square 0)
+                      (array-dimension square 1))
+                :initial-contents new-rows)))
 
-(defun matrix= (matrix-1 matrix-2)
-  (let ((num-rows (array-dimension matrix-1 0))
-        (num-cols (array-dimension matrix-1 1)))
-    (loop for row-index from 0 to (1- num-rows)
-       always (loop for col-index from 0 to (1- num-cols)
-                 always (= (aref matrix-1 row-index col-index)
-                           (aref matrix-2 row-index col-index))))))
+(defun mirror-square (square)
+  "Returns a mirror image of SQUARE rotated around a vertical axis."
+  nil)
 
-(rt:deftest normal-matrix=
-    (let ((matrix-1 (make-array '(3 3) :initial-contents '((1 2 3)
+(rt:deftest rotate-square-clockwise
+    (let ((square-1 (make-array '(3 3) :initial-contents '((1 2 3)
                                                            (4 5 6)
                                                            (7 8 9))))
-          (matrix-2 (make-array '(3 3) :initial-contents '((1 2 3)
-                                                           (4 5 6)
-                                                           (7 8 9)))))
-      (matrix= matrix-1 matrix-2)) t)
+          (square-2 (make-array '(3 3) :initial-contents '((7 4 1)
+                                                           (8 5 2)
+                                                           (9 6 3)))))
+      (equal (write-to-string (rotate-square square-1))
+             (write-to-string square-2))) t)
 
-(rt:deftest matrix-identity
-    (equal (matrix-id *perfect-square*) *perfect-square*) t)
+(rt:deftest mirror-square-horizontally
+    (let ((square-1 (make-array '(3 3) :initial-contents '((1 2 3)
+                                                           (4 5 6)
+                                                           (7 8 9))))
+          (square-2 (make-array '(3 3) :initial-contents '((3 2 1)
+                                                           (6 5 4)
+                                                           (9 8 7)))))
+      (equal (write-to-string (mirror-square square-1))
+             (write-to-string square-2))) t)
 
 ;;; tests
 
