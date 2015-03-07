@@ -1,3 +1,5 @@
+(ql:quickload :rt)
+
 (defun range (n)
   "Returns a list with elements 0 to N-1."
   (let (range) (dotimes (i n (nreverse range)) (push i range))))
@@ -63,26 +65,56 @@
               (aref array row-index (- num-rows row-index 1))))
       (list diag-1 diag-2))))
 
-(defun fill-into-array (target-array num-list)
-  "Fills in a 2d array with the numbers in num-list"
-  (let ((nums (copy-seq num-list)))
-    (dotimes (row-index (array-dimension target-array 0) target-array)
-      (dotimes (col-index (array-dimension target-array 1))
-        (setf (aref target-array row-index col-index) (pop nums))))))
+;;; helper function -- can factor out later
+
+(defun subdivide (list n)
+  "Returns a list of lists which are subdivisions of LIST of size N."
+  (let (lists)
+    (loop while list
+       do (progn (push (subseq list 0 n) lists) (dotimes (i n) (pop list))))
+    (nreverse lists)))
+
+(rt:deftest subdivision
+    (equal (subdivide '(1 2 3 4) 2) '((1 2) (3 4))) t)
+
+;;; matrix operation stuff -- can factor out later
+
+(defun matrix-id (matrix)
+  (
+
+(defun matrix= (matrix-1 matrix-2)
+  (let ((num-rows (array-dimension matrix-1 0))
+        (num-cols (array-dimension matrix-1 1)))
+    (loop for row-index from 0 to (1- num-rows)
+       always (loop for col-index from 0 to (1- num-cols)
+                 always (= (aref matrix-1 row-index col-index)
+                           (aref matrix-2 row-index col-index))))))
+
+(rt:deftest normal-matrix=
+    (let ((matrix-1 (make-array '(3 3) :initial-contents '((1 2 3)
+                                                           (4 5 6)
+                                                           (7 8 9))))
+          (matrix-2 (make-array '(3 3) :initial-contents '((1 2 3)
+                                                           (4 5 6)
+                                                           (7 8 9)))))
+      (matrix= matrix-1 matrix-2)) t)
+
+(rt:deftest matrix-identity
+    (equal (matrix-id *perfect-square*) *perfect-square*) t)
 
 ;;; tests
 
-(defparameter *perfect-square* (make-array '(3 3)))
-(fill-into-array *perfect-square* '(8 1 6 3 5 7 4 9 2))
-(defparameter *imperfect-square* (make-array '(3 3)))
-(fill-into-array *imperfect-square* '(5 6 4 9 7 8 1 2 3))
-
-(ql:quickload :rt)
+(defparameter *perfect-square* (make-array '(3 3) :initial-contents '((8 1 6)
+                                                                      (3 5 7)
+                                                                      (4 9 2))))
+(defparameter *wrong-square* (make-array '(3 3)  :initial-contents '((5 6 4)
+                                                                     (9 7 8)
+                                                                     (1 2 3))))
 
 (rt:deftest magic-square
     (magic-square-p *perfect-square*) t)
 
 (rt:deftest non-magic-square
-    (magic-square-p *imperfect-square*) nil)
+    (magic-square-p *wrong-square*) nil)
 
 (rt:do-tests)
