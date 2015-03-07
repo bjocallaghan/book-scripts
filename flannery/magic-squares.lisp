@@ -37,7 +37,6 @@
         (dotimes (col-index num-cols)
           (setf (aref row-vec col-index) (aref array row-index col-index)))
         (push row-vec rows)))))
-                
 
 (defun columns (array)
   "Retuns the rows of a 2d ARRAY as a sequence of vectors."
