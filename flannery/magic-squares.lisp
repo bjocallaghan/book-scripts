@@ -1,5 +1,3 @@
-(ql:quickload :rt)
-
 (defun range (n)
   "Returns a list with elements 0 to N-1."
   (let (range) (dotimes (i n (nreverse range)) (push i range))))
@@ -16,6 +14,8 @@
 (defun sum (seq)
   "Returns the numeric sum of a sequence."
   (reduce #'+ seq))
+
+;;; matrix operation stuff -- can factor out later
 
 (defun row (array row-index)
   "Returns the row of ARRAY at index ROW-INDEX as a vector."
@@ -65,7 +65,10 @@
               (aref array row-index (- num-rows row-index 1))))
       (list diag-1 diag-2))))
 
-;;; matrix operation stuff -- can factor out later
+(defun copy-square (square)
+  (make-array (list (array-dimension square 0)
+                    (array-dimension square 1))
+              :initial-contents (rows square)))
 
 (defun rotate-square (square)
   "Returns a clockwise-rotated square based on a 2d array SQUARE."
@@ -74,38 +77,139 @@
                       (array-dimension square 1))
                 :initial-contents new-rows)))
 
-(defun mirror-square (square)
+(defun mirror-square (square &key (axis :horizontal))
   "Returns a mirror image of SQUARE rotated around a vertical axis."
-  nil)
+  (ecase axis
+    (:horizontal
+     (make-array (list (array-dimension square 0)
+                       (array-dimension square 1))
+                 :initial-contents (mapcar #'nreverse (rows square))))
+    (:vertical
+     (make-array (list (array-dimension square 0)
+                       (array-dimension square 1))
+                 :initial-contents (nreverse (rows square))))
+    (:diagonal
+     (mirror-square
+      (rotate-square
+       (make-array (list (array-dimension square 0)
+                         (array-dimension square 1))
+                   :initial-contents (rows square)))
+      :axis :horizontal))))
+
+;;; normalize-square is sort of a mess -- i think it's correct for 3x3 though
+(defun normalize-square (square)
+  "Returns the normalized version of SQUARE.
+
+Normalized is when the lowest corner digit is in the upper-right, with the next
+lowest in the mid-upper. If no corners are set, mid-upper is key one, mid-left
+is key two."
+  (let ((norm-square (copy-square square))
+        (num-rows (array-dimension square 0))
+        (num-cols (array-dimension square 1)))
+    ;; todo: generalize the function
+    (unless (and (= 3 num-rows) (= 3 num-cols)) (error "limit 3x3 for now"))
+    (let ((corners (list (aref square 0 0)
+                         (aref square 2 0)
+                         (aref square 2 2)
+                         (aref square 0 2)))
+          (middles (list (aref square 0 1)
+                         (aref square 1 2)
+                         (aref square 2 1)
+                         (aref square 1 0))))
+      (flet ((lowest-position (sequence)
+               (position (apply #'min (remove-if #'zerop sequence)) sequence))
+             (needs-mirror (square)
+               (cond
+                 ((or (plusp (aref square 0 1))
+                      (plusp (aref square 1 0)))
+                  (or (zerop (aref square 0 1))
+                      (and (plusp (aref square 1 0))
+                           (> (aref square 0 1) (aref square 1 0)))))
+                 ((or (plusp (aref square 0 2))
+                      (plusp (aref square 2 0)))
+                  (or (zerop (aref square 0 2))
+                      (and (plusp (aref square 2 0))
+                           (> (aref square 0 2) (aref square 2 0)))))
+                 ((or (plusp (aref square 1 2))
+                      (plusp (aref square 2 1)))
+                  (or (zerop (aref square 1 2))
+                      (and (plusp (aref square 2 1))
+                           (> (aref square 1 2) (aref square 2 1))))))))
+        (if (remove-if #'zerop corners)
+            (dotimes (i (lowest-position corners))
+              (setf norm-square (rotate-square norm-square)))
+            (when (remove-if #'zerop middles)
+              (dotimes (i (lowest-position middles))
+                (setf norm-square (rotate-square norm-square)))))
+        (when (needs-mirror norm-square)
+          (setf norm-square (mirror-square norm-square :axis :diagonal))))
+      norm-square)))
+
+(defun square= (square-1 square-2)
+  (string= (write-to-string square-1) (write-to-string square-2)))
+
+(defun square-equiv (square-1 square-2)
+  (square= (normalize-square square-1) (normalize-square square-2)))
+
+(rt:deftest copy-square-test
+    (let ((square #2a ((1 2 3)
+                       (4 5 6)
+                       (7 8 9))))
+      (square= (copy-square square) square)) t)
 
 (rt:deftest rotate-square-clockwise
-    (let ((square-1 (make-array '(3 3) :initial-contents '((1 2 3)
-                                                           (4 5 6)
-                                                           (7 8 9))))
-          (square-2 (make-array '(3 3) :initial-contents '((7 4 1)
-                                                           (8 5 2)
-                                                           (9 6 3)))))
-      (equal (write-to-string (rotate-square square-1))
-             (write-to-string square-2))) t)
+    (let ((square-1 #2a ((1 2 3)
+                         (4 5 6)
+                         (7 8 9)))
+          (square-2 #2a ((7 4 1)
+                         (8 5 2)
+                         (9 6 3))))
+      (square= (rotate-square square-1) square-2)) t)
 
 (rt:deftest mirror-square-horizontally
-    (let ((square-1 (make-array '(3 3) :initial-contents '((1 2 3)
-                                                           (4 5 6)
-                                                           (7 8 9))))
-          (square-2 (make-array '(3 3) :initial-contents '((3 2 1)
-                                                           (6 5 4)
-                                                           (9 8 7)))))
-      (equal (write-to-string (mirror-square square-1))
-             (write-to-string square-2))) t)
+    (let ((square-1 #2a ((1 2 3)
+                         (4 5 6)
+                         (7 8 9)))
+          (square-2 #2a ((3 2 1)
+                         (6 5 4)
+                         (9 8 7))))
+      (square= (mirror-square square-1) square-2)) t)
 
-;;; tests
+(rt:deftest normalize-square-1
+    (let ((square-1 #2a ((1 4 7)
+                         (2 5 8)
+                         (3 6 9)))
+          (square-2 #2a ((1 2 3)
+                         (4 5 6)
+                         (7 8 9))))
+      (square= (normalize-square square-1) square-2)) t)
 
-(defparameter *perfect-square* (make-array '(3 3) :initial-contents '((8 1 6)
-                                                                      (3 5 7)
-                                                                      (4 9 2))))
-(defparameter *wrong-square* (make-array '(3 3)  :initial-contents '((5 6 4)
-                                                                     (9 7 8)
-                                                                     (1 2 3))))
+(rt:deftest normalize-square-2
+    (let ((square-1 #2a ((0 0 9)
+                         (0 0 0)
+                         (0 0 4)))
+          (square-2 #2a ((4 0 9)
+                         (0 0 0)
+                         (0 0 0))))
+      (square= (normalize-square square-1) square-2)) t)
+
+(rt:deftest normalize-square-3
+    (let ((square-1 #2a ((0 0 0)
+                         (0 0 2)
+                         (0 4 0)))
+          (square-2 #2a ((0 2 0)
+                         (4 0 0)
+                         (0 0 0))))
+      (square= (normalize-square square-1) square-2)) t)
+
+(defparameter *perfect-square* #2a ((8 1 6)
+                                    (3 5 7)
+                                    (4 9 2)))
+(defparameter *wrong-square* #2a ((5 6 4)
+                                  (9 7 8)
+                                  (1 2 3)))
+
+;; actual magic squares tests (not just matrix junk)
 
 (rt:deftest magic-square
     (magic-square-p *perfect-square*) t)
@@ -114,3 +218,10 @@
     (magic-square-p *wrong-square*) nil)
 
 (rt:do-tests)
+
+(defun sq (input)
+  (let ((square (make-array '(3 3) :initial-element 0))
+        (text (write-to-string input)))
+    (dotimes (i 9 square)
+      (setf (aref square (floor i 3) (mod i 3))
+            (read-from-string (subseq text i (1+ i)))))))
