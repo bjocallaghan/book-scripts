@@ -1,6 +1,37 @@
-(defun range (n)
-  "Returns a list with elements 0 to N-1."
-  (let (range) (dotimes (i n (nreverse range)) (push i range))))
+(defun possible-squares (square num)
+  "Given a partially filled SQUARE, return a list of all possible squares with
+NUM added in any viable position."
+  (let (new-squares
+        (side-size (array-dimension square 0)))
+    (dotimes (i (* side-size side-size))
+      (when (zerop (aref square (floor i side-size) (mod i side-size)))
+        (let ((new-square (copy-square square)))
+          (setf (aref new-square (floor i side-size) (mod i side-size)) num)
+          (when (viable-square new-square)
+            (push new-square new-squares)))))
+    (remove-duplicates new-squares
+                       :test #'square=
+                       :key #'normalize-square)))
+
+(defun viable-square (square)
+  (and (loop for row in (rows square) always (viable-triple row))
+       (loop for column in (columns square) always (viable-triple column))
+       (loop for diag in (diagonals square) always (viable-triple diag))))
+
+(defun viable-triple (triple)
+  (if (position 0 triple)
+      (< (sum triple) 15)
+      (= (sum triple) 15)))
+
+(defun solve-square (empty-square &optional verbose)
+  (let ((solutions (list empty-square)))
+    (loop for i from 9 downto 1 by 1
+       do (let (next-gen)
+            (when verbose
+              (format t "adding ~d to ~d solutions~%" i (length solutions)))
+            (dolist (square solutions)
+              (setf next-gen (nconc next-gen (possible-squares square i))))
+            (setf solutions next-gen))) solutions))
 
 (defun magic-square-p (square &optional (magic-sum 15))
   "Returns T if the provided SQUARE is a magic square."
@@ -10,6 +41,10 @@
           always (= magic-sum (sum column)))
        (loop for diagonal in (diagonals square)
           always (= magic-sum (sum diagonal)))))
+
+(defun range (n)
+  "Returns a list with elements 0 to N-1."
+  (let (range) (dotimes (i n (nreverse range)) (push i range))))
 
 (defun sum (seq)
   "Returns the numeric sum of a sequence."
@@ -80,11 +115,11 @@
 (defun mirror-square (square &key (axis :horizontal))
   "Returns a mirror image of SQUARE rotated around a vertical axis."
   (ecase axis
-    (:horizontal
+    (:vertical
      (make-array (list (array-dimension square 0)
                        (array-dimension square 1))
                  :initial-contents (mapcar #'nreverse (rows square))))
-    (:vertical
+    (:horizontal
      (make-array (list (array-dimension square 0)
                        (array-dimension square 1))
                  :initial-contents (nreverse (rows square))))
@@ -94,7 +129,7 @@
        (make-array (list (array-dimension square 0)
                          (array-dimension square 1))
                    :initial-contents (rows square)))
-      :axis :horizontal))))
+      :axis :vertical))))
 
 ;;; normalize-square is sort of a mess -- i think it's correct for 3x3 though
 (defun normalize-square (square)
@@ -113,9 +148,9 @@ is key two."
                          (aref square 2 2)
                          (aref square 0 2)))
           (middles (list (aref square 0 1)
-                         (aref square 1 2)
+                         (aref square 1 0)
                          (aref square 2 1)
-                         (aref square 1 0))))
+                         (aref square 1 2))))
       (flet ((lowest-position (sequence)
                (position (apply #'min (remove-if #'zerop sequence)) sequence))
              (needs-mirror (square)
@@ -143,6 +178,9 @@ is key two."
                 (setf norm-square (rotate-square norm-square)))))
         (when (needs-mirror norm-square)
           (setf norm-square (mirror-square norm-square :axis :diagonal))))
+      (when (= (length (remove-if #'plusp (first (columns norm-square))))
+               (length (rows norm-square)))
+        (setq norm-square (mirror-square norm-square :axis :vertical)))
       norm-square)))
 
 (defun square= (square-1 square-2)
@@ -166,14 +204,14 @@ is key two."
                          (9 6 3))))
       (square= (rotate-square square-1) square-2)) t)
 
-(rt:deftest mirror-square-horizontally
+(rt:deftest mirror-square-vertical-axis
     (let ((square-1 #2a ((1 2 3)
                          (4 5 6)
                          (7 8 9)))
           (square-2 #2a ((3 2 1)
                          (6 5 4)
                          (9 8 7))))
-      (square= (mirror-square square-1) square-2)) t)
+      (square= (mirror-square square-1 :axis :vertical) square-2)) t)
 
 (rt:deftest normalize-square-1
     (let ((square-1 #2a ((1 4 7)
@@ -202,14 +240,14 @@ is key two."
                          (0 0 0))))
       (square= (normalize-square square-1) square-2)) t)
 
+;;; actual magic squares tests (not just matrix junk)
+
 (defparameter *perfect-square* #2a ((8 1 6)
                                     (3 5 7)
                                     (4 9 2)))
 (defparameter *wrong-square* #2a ((5 6 4)
                                   (9 7 8)
                                   (1 2 3)))
-
-;; actual magic squares tests (not just matrix junk)
 
 (rt:deftest magic-square
     (magic-square-p *perfect-square*) t)
@@ -219,7 +257,9 @@ is key two."
 
 (rt:do-tests)
 
+;; convenience function for quick entry during debugging
 (defun sq (input)
+  "Returns a 3x3 array. (sq 123456789) is equiv to #2a((1 2 3)(4 5 6)(7 8 9))"
   (let ((square (make-array '(3 3) :initial-element 0))
         (text (write-to-string input)))
     (dotimes (i 9 square)
