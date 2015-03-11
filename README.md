@@ -26,3 +26,7 @@ Also, references to some cool stuff I've found.
 ### Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp
 #### Perter Norvig
 [on Amazon](http://www.amazon.com/exec/obidos/ASIN/1558601910)
+
+### Land of Lisp
+#### Conrad Barski
+[on Amazon](http://www.amazon.com/Land-Lisp-Learn-Program-Game/dp/1593272812/)
