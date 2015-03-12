@@ -31,5 +31,5 @@
 
 (defun objects-at (location objects object-locations)
   (flet ((object-at-p (object)
-           (eq location (cdr (assoc object object-locations)))))
-    (remove-if-not #'object-at-p objects))) *bug*
+           (eq location (cadr (assoc object object-locations)))))
+    (remove-if-not #'object-at-p objects)))
