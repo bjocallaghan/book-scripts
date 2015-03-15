@@ -25,7 +25,7 @@
           (mapc (lambda (edge)
                   (fresh-line)
                   (princ (dot-name (car node)))
-                  (princ "--")
+                  (princ "->")
                   (princ (dot-name (car edge)))
                   (princ "[label=\"")
                   (princ (dot-label (cdr edge)))
@@ -48,3 +48,27 @@
 
 (defun graph->png (fname nodes edges)
   (dot->png fname (lambda () (graph->dot nodes edges))))
+
+(defun uedges->dot (edges)
+  (maplist (lambda (list)
+             (mapc (lambda (edge)
+                     (unless (assoc (car edge) (cdr list))
+                       (fresh-line)
+                       (princ (dot-name (caar list)))
+                       (princ "--")
+                       (princ (dot-name (car edge)))
+                       (princ "[label=\"")
+                       (princ (dot-label (cddr edge)))
+                       (princ "\"];")))
+                   (cdar list)))
+           edges))
+
+(defun ugraph->dot (nodes edges)
+  (princ "graph{")
+  (nodes->dot nodes)
+  (uedges->dot edges)
+  (princ "}"))
+
+(defun ugraph->png (fname nodes edges)
+  (dot->png fname
+            (lambda () (ugraph->dot nodes edges))))
