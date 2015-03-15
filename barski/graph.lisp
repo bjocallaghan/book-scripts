@@ -42,7 +42,8 @@
 (defun dot->png (fname thunk)
   (with-open-file (*standard-output*
                    fname
-                   :direction :output)
+                   :direction :output
+                   :if-exists :supersede)
     (funcall thunk))
   (trivial-shell:shell-command (concatenate 'string "dot -Tpng -O " fname)))
 
