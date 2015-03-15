@@ -74,3 +74,43 @@
 
 (defparameter *starting-location* 'living-room)
 (defparameter *location* *starting-location*)
+
+;;; interface
+
+(defparameter *allowed-commands* '(look walk pickup inventory))
+
+(defun game-repl ()
+  (let ((cmd (game-read)))
+    (unless (eq (car cmd) 'quit)
+      (game-print (game-eval cmd))
+      (game-repl))))
+
+(defun game-read ()
+  (let ((cmd (read-from-string (concatenate 'string "(" (read-line) ")"))))
+    (flet ((quote-it (x)
+             (list 'quote x)))
+      (cons (car cmd) (mapcar #'quote-it (cdr cmd))))))
+
+(defun game-eval (sexp)
+  (if (member (car sexp) *allowed-commands*)
+      (eval sexp)
+      '(i "don't" know that command.)))
+
+(defun game-print (sexp)
+  (princ (coerce (tweak-text (coerce (string-trim "() " (prin1-to-string sexp))
+                                     'list)
+                             t
+                             nil)
+                 'string))
+  (fresh-line))
+
+(defun tweak-text (list caps lit)
+  (when list
+    (let ((item (car list))
+          (rest (cdr list)))
+      (cond ((eq item #\space) (cons item (tweak-text rest caps lit)))
+            ((member item '(#\! #\? #\.)) (cons item (tweak-text rest t lit)))
+            ((eq item #\") (tweak-text rest caps (not lit)))
+            (lit (cons item (tweak-text rest nil lit)))
+            ((or caps lit) (cons (char-upcase item) (tweak-text rest nil nil)))
+            (t (cons (char-downcase item) (tweak-text rest nil nil)))))))
