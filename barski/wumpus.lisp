@@ -125,6 +125,7 @@
   (setf *city-nodes* (make-city-nodes *city-edges*))
   (setf *player-pos* (find-empty-node))
   (setf *visited-nodes* (list *player-pos*))
+  (draw-known-city)
   (draw-city))
 
 (defun find-empty-node ()
@@ -181,7 +182,7 @@
 
 (defun handle-new-place (edge pos charging)
   (let* ((node (assoc pos *city-nodes*))
-         (has-worm (and (member 'glow-worm node)
+         (has-worm (and (member 'glow-worms node)
                         (not (member pos *visited-nodes*)))))
     (pushnew pos *visited-nodes*)
     (setf *player-pos* pos)
