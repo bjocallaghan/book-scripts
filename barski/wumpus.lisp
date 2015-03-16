@@ -196,3 +196,8 @@
                       (princ "You ran into the Glow Worm Gang! You're now at ")
                       (princ new-pos)
                       (handle-new-place nil new-pos nil))))))
+
+(defun reveal-map ()
+  (setf *visited-nodes* (loop for i from 1 to *node-num* collect i))
+  (draw-known-city))
+
