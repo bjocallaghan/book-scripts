@@ -18,17 +18,15 @@
         (format t "~&~3d --> ~a --> ~3d ~a~%"
                 age (mod-age age) r-age (= age r-age))))
 
-(defparameter *message-1* '(this message is top secret))
-
 (defun caesar-cipher (n message)
   (let* ((n (mod n 26))
-         (alpha (coerce "ABCDEFGHIJKLMNOPQRSTUVWXWZ" 'list))
+         (alpha (coerce "ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'list))
          (shifted (copy-seq alpha)))
     (setf (cdr (last shifted)) shifted) ; make circular
     (setf shifted (nthcdr n shifted)) ; do the shift
     (let (result)
       (loop for char in (coerce (write-to-string message) 'list)
-         do (let ((index (position char alpha)))
+         do (let ((index (position (char-upcase char) alpha)))
               (when index (push (elt shifted index) result))))
       (coerce (nreverse result) 'string))))
 
@@ -37,3 +35,12 @@
 
 (defun caesar-decode (n message)
   (caesar-cipher (- n) message))
+
+(defparameter *message-1* '(this message is top secret))
+(defparameter *encoded-1* '(wklvlvkrzzhghflskhu))
+(defparameter *message-2* '(thisishowwedecipher))
+(defparameter *encoded-2* '(wubdjdlq))
+(defparameter *message-3* '(cold))
+
+(format t "~2&~a~%" (caesar-encode 4 "pecan"))
+(format t "~2&~a~%" (caesar-encode 9 "sleep"))
