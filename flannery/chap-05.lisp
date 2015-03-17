@@ -29,3 +29,25 @@ results are allowed."
 (defun fermat (n)
   "Returns the Nth Fermat number."
   (1+ (expt 2 (expt 2 n))))
+
+(defun euler (n)
+  "Returns the Nth Euler number."
+  (+ 41 (- n) (* n n)))
+
+(loop for i from 1 to 50
+   do (format t "E(~2d) = ~6d = ~a~%"
+              i (euler i) (factor:prime-factorization (euler i))))
+
+(defun mersenne (n)
+  "Returns the Nth Mersenne number."
+  (1- (expt 2 n)))
+
+(let ()
+  (loop for i from 2 to 70 when (factor:primep i)
+     do
+       (format t "~%  attempting ~d" i)
+       (let ((factors (factor:prime-factorization (mersenne i))))
+         (when (= (length factors) 1)
+           (format t "~%E(~2d) = ~20d = ~a"
+                   i (mersenne i) (factor:prime-factorization (mersenne i))))))
+  (format t "~%DONE.~%"))
